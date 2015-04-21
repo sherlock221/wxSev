@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
+    <meta name="format-detection" content="telphone=no, email=no"/>
+    <script type="text/javascript" src="/lib/jquery/jquery-2.1.3.min.js"></script>
+    <title></title>
+
+    <!-- 防止缓存 -->
+    <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
+    <meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache">
+    <meta HTTP-EQUIV="Expires" CONTENT="0">
+
+</head>
+<body >
+
+
+        这是一个主页
+        <button onclick="getSignature();">获得token</button>
+
+
+<script type="text/javascript">
+
+    function getSignature (){
+
+        $.post("/signature",{
+            url : "localhost",
+            c_no : "cicada"
+        },function(res){
+            console.log(res);
+        })
+
+    }
+
+</script>
+</body>
+
+
+</html>
