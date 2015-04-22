@@ -47,7 +47,7 @@ var signatureSev = {
             // 此处可能需要清理缓存当中已过期的数据
             else{
                 //清除缓存
-                delete cachedSignatures[url];
+                delete cacheSignature[app.type];
                 //生成新签名
                 console.log("过期,重新获得签名....");
                 getToken(url, app,callBack);

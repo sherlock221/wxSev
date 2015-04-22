@@ -14,15 +14,51 @@
 
     <script type="text/javascript" src="/lib/weixin/jweixin-1.0.0.js"></script>
 
-
 </head>
 <body >
 
-        这是一个主页
-        <button onclick="getSignature();">获得token</button>
+        <button onclick="getSignature();" class="button" style="width: 200px;height: 100px;">获得token</button>
+
+        <div>
+            <span id="uId"></span>
+            <span id="sys"></span>
+        </div>
 
 
 <script type="text/javascript">
+
+    //从url上拿参数
+
+    function GetRequest() {
+
+        var url = location.search; //获取url中"?"符后的字串
+
+        var theRequest = new Object();
+
+        if (url.indexOf("?") != -1) {
+
+            var str = url.substr(1);
+
+            strs = str.split("&");
+
+            for(var i = 0; i < strs.length; i ++) {
+                theRequest[strs[i].split("=")[0]]=unescape(strs[i].split("=")[1]);
+            }
+        }
+
+        return theRequest;
+
+    }
+
+    var uIdDom = document.querySelector("#uId");
+    var sysDom = document.querySelector("#sys");
+
+
+    var reqs  = GetRequest();
+
+    var uId = reqs['uId'];
+    var sysTime = reqs['sysTime'];
+
 
     function getSignature (){
 
@@ -35,6 +71,10 @@
                 alert(res.errcode);
             }
             else{
+
+                document.querySelector("#uId").innerHTML = "uId :" +uId;
+                document.querySelector("#sys").innerHTML = "sys :" +sysTime;
+
 
                 wx.config({
                     debug: true, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
