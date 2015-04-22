@@ -10,14 +10,16 @@ var urllib = require('urllib');
 var access_token_url = "https://api.weixin.qq.com/cgi-bin/token";
 var ticket_url = "https://api.weixin.qq.com/cgi-bin/ticket/getticket";
 
-//缓存
-var cachedSignatures = {};
 
+//2小时后过期，需要重新获取数据后计算签名
+var expireTime = 7200 - 100;
+//var expireTime = 10;
 
-//企业公众账号
+//缓存验证
+var cacheSignature = {};
+
+//企业公众账号配置
 var appList = require("../wx-account");
-
-
 
 
 var signatureSev = {
@@ -27,14 +29,18 @@ var signatureSev = {
         var result;
 
         //当前公众账号
-        var app = appList[c_no];
-        var signatureObj = cachedSignatures[url];
+        var app = getApp("type",c_no,appList);
+
+        //缓存中的
+        var signatureObj =  cacheSignature[app.type] ? cacheSignature[app.type].signature  || "";
 
 
         // 如果缓存中已存在签名，则直接返回签名
         if (signatureObj && signatureObj.timestamp) {
             var t = createTimeStamp() - signatureObj.timestamp;
             console.log(signatureObj.url, url);
+
+            console.log("时间: ",t);
 
             if (t < expireTime && signatureObj.url == url) {
                 console.log('来自缓存....');
@@ -48,19 +54,32 @@ var signatureSev = {
                 callBack(result);
             }
             // 此处可能需要清理缓存当中已过期的数据
+            else{
+                //清除缓存
+                delete cachedSignatures[url];
+                //生成新签名
+                console.log("获得签名....");
+                getToken(url, app,callBack);
+            }
 
         }
-
         //生成签名
         else {
-            getToken(url, app, callBack);
+            console.log("获得签名....");
+            getToken(url, app,callBack);
         }
     }
 
 };
 
-
-//获得token
+/**
+ * 获得token 有效期7200秒
+ * success : {"access_token":"ACCESS_TOKEN","expires_in":7200}
+ * error   : {"errcode":40013,"errmsg":"invalid appid"}
+ * @param url
+ * @param app
+ * @param callBack
+ */
 var getToken = function (url, app, callBack) {
     urllib.request(access_token_url, {
         method: 'GET',
@@ -74,28 +93,36 @@ var getToken = function (url, app, callBack) {
         if(err)
             callBack(err);
         else{
-
+            console.log("token res : ",data.toString());
             data = JSON.parse(data.toString());
             if(data.errcode){
-                callBack(data.errmsg);
+                callBack(data);
                 return;
             }
 
-            console.log("token res : ",data);
-            getTicket(url, app, data.access_token, callBack);
-        }
+            app.signature =    app.signature || {};
+            app.signature.access_token = data.access_token;
 
+            getTicket(url, app, data.access_token, "jsapi",callBack);
+        }
     });
 }
 
-//获得ticket
-var getTicket = function (url, app, access_token, callBack) {
+
+/**
+ * 获得ticket
+ * @param url
+ * @param app
+ * @param access_token
+ * @param callBack
+ */
+var getTicket = function (url, app, access_token, ticketType,callBack) {
 
     urllib.request(ticket_url, {
         method: 'GET',
         data: {
             'access_token': access_token,
-            'type': 'jsapi'
+            'type': ticketType
         }
     }, function (err, data, res) {
         if(err){
@@ -108,27 +135,40 @@ var getTicket = function (url, app, access_token, callBack) {
         data = JSON.parse(str);
 
         if(data.errcode){
-            callBack(data.errmsg);
+            callBack(data);
             return;
         }
 
-        var ts = createTimeStamp();
-        var nonceStr = createNonceStr();
-        var ticket = data.ticket;
-        var signature = calcSignature(ticket, nonceStr, ts, url);
+        app.signature =    app.signature || {};
+        app.signature.ticket = data.ticket;
+        app.signature.timestamp = createTimeStamp();
 
-        var temp = {
-            nonceStr: nonceStr
-            , timestamp: ts,
-            appid: app.appid
-            , signature: signature
-            , url: url
-        };
+        //缓存app
+        cacheSignature[app.type] = app;
 
-        callBack(null,temp);
+        //var ts = createTimeStamp();
+        //var nonceStr = createNonceStr();
+        //var ticket = data.ticket;
+        //var signature = calcSignature(ticket, nonceStr, ts, url);
+        //
+        //
+        //console.log("ticket res :",ticket);
+        //
+        //var temp = {
+        //    nonceStr: nonceStr
+        //    , timestamp: ts,
+        //    appid: app.appid
+        //    , signature: signature
+        //    , url: url
+        //};
+
+        //缓存
+        //cachedSignatures[url] = temp;
+        callBack(null,data);
 
     });
 }
+
 
 
 //计算签名
@@ -147,6 +187,15 @@ var createNonceStr = function () {
 var createTimeStamp = function () {
     return parseInt(new Date().getTime() / 1000) + '';
 };
+
+//获得app
+var getApp  = function(key,value,arrayList){
+    for(var i=0; i<arrayList.length;i ++){
+        var obj = arrayList[i];
+        if(obj[key] == value)
+            return obj;
+    }
+}
 
 module.exports = signatureSev;
 
