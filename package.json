@@ -11,8 +11,10 @@
     "debug": "~2.1.1",
     "express": "~4.12.2",
     "jade": "~1.9.2",
+    "ejs" : "*",
     "morgan": "~1.5.1",
     "serve-favicon": "~2.2.0",
-    "urllib": "^2.3.4"
+    "urllib": "^2.3.4",
+    "jssha": "*"
   }
 }

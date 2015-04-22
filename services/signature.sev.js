@@ -7,11 +7,12 @@ var https = require("https");
 var querystring = require('querystring');
 var urllib = require('urllib');
 
+//相关url地址
 var access_token_url = "https://api.weixin.qq.com/cgi-bin/token";
 var ticket_url = "https://api.weixin.qq.com/cgi-bin/ticket/getticket";
 
 
-//2小时后过期，需要重新获取数据后计算签名
+//2小时后过期，需要重新获取数据后计算签名(为了防止实效提前100秒)
 var expireTime = 7200 - 100;
 //var expireTime = 10;
 
@@ -26,39 +27,29 @@ var signatureSev = {
 
     //获得数字签名
     getSignature: function (c_no, url, callBack) {
-        var result;
 
         //当前公众账号
         var app = getApp("type",c_no,appList);
 
         //缓存中的
-        var signatureObj =  cacheSignature[app.type] ? cacheSignature[app.type].signature  || "";
+        var signatureObj =  cacheSignature[app.type] ? cacheSignature[app.type].signature : "" ;
 
 
         // 如果缓存中已存在签名，则直接返回签名
         if (signatureObj && signatureObj.timestamp) {
             var t = createTimeStamp() - signatureObj.timestamp;
-            console.log(signatureObj.url, url);
+            console.log("已经过去时间: ",t);
 
-            console.log("时间: ",t);
-
-            if (t < expireTime && signatureObj.url == url) {
+            if (t < expireTime) {
                 console.log('来自缓存....');
-                result = {
-                    nonceStr: signatureObj.nonceStr
-                    , timestamp: signatureObj.timestamp
-                    , appid: signatureObj.appid
-                    , signature: signatureObj.signature
-                    , url: signatureObj.url
-                };
-                callBack(result);
+                callBack(null,resultObj(url,app));
             }
             // 此处可能需要清理缓存当中已过期的数据
             else{
                 //清除缓存
                 delete cachedSignatures[url];
                 //生成新签名
-                console.log("获得签名....");
+                console.log("过期,重新获得签名....");
                 getToken(url, app,callBack);
             }
 
@@ -99,7 +90,6 @@ var getToken = function (url, app, callBack) {
                 callBack(data);
                 return;
             }
-
             app.signature =    app.signature || {};
             app.signature.access_token = data.access_token;
 
@@ -139,36 +129,31 @@ var getTicket = function (url, app, access_token, ticketType,callBack) {
             return;
         }
 
-        app.signature =    app.signature || {};
+        app.signature =  app.signature || {};
         app.signature.ticket = data.ticket;
         app.signature.timestamp = createTimeStamp();
+        app.signature.nonceStr = createNonceStr();
 
         //缓存app
         cacheSignature[app.type] = app;
-
-        //var ts = createTimeStamp();
-        //var nonceStr = createNonceStr();
-        //var ticket = data.ticket;
-        //var signature = calcSignature(ticket, nonceStr, ts, url);
-        //
-        //
-        //console.log("ticket res :",ticket);
-        //
-        //var temp = {
-        //    nonceStr: nonceStr
-        //    , timestamp: ts,
-        //    appid: app.appid
-        //    , signature: signature
-        //    , url: url
-        //};
-
-        //缓存
-        //cachedSignatures[url] = temp;
-        callBack(null,data);
-
+        console.log("ticket res :", data.ticket);
+        callBack(null,resultObj(url,app));
     });
 }
 
+
+
+//格式化签名
+var  resultObj = function(url,app){
+    var signature =  calcSignature(app.signature.ticket,app.signature.nonceStr,app.signature.timestamp,url);
+    return  {
+            nonceStr: app.signature.nonceStr
+        , timestamp: app.signature.timestamp
+        , appid: app.appid
+        , signature: signature
+        , url: url
+    };
+}
 
 
 //计算签名
