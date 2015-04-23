@@ -3,9 +3,7 @@
  */
 var express = require('express');
 var router = express.Router();
-
 var signatureSev = require("../../services/signature.sev.js");
-
 
 /**
  * 获取微信验证
@@ -37,7 +35,6 @@ router.post('/', function(req, res, next) {
             console.log("当前设备支持签名:",supportSignature);
         }
     }
-
 
 
 

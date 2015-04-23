@@ -62,6 +62,8 @@
 
     function getSignature (){
 
+
+        //注册服务
         $.post("/signature",{
             url : location.href.split('#')[0],
             c_no : "test-abjia"
@@ -122,9 +124,9 @@
 
                 wx.ready(function () {
                     var shareData = {
-                        title: '这里是分享标题',
-                        desc: '这里是发送给好友的时候的简介',
-                        link: 'http://baidu.com',
+                        title: '分享给我的好朋友',
+                        desc: '暗黑分享'+uId,
+                        link: window.location.href,
                         imgUrl: 'http://baidu.com/logo.jpg'
                     };
                     wx.onMenuShareAppMessage(shareData);
@@ -133,11 +135,8 @@
                 wx.error(function (res) {
                     alert(res.errMsg);
                 });
-
             }
         })
-
-
 
 
 

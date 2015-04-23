@@ -1,6 +1,7 @@
 /**
  * Created by abjia on 15-4-21.
  */
+var logger = require('./../log').logger;
 var jsSHA = require("jssha");
 var http = require("http");
 var https = require("https");

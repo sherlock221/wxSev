@@ -5,13 +5,15 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var route = require("./routes/route");
-
+var log4js = require('log4js');
+var log = require('./log');
 var app = express();
 
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(__dirname + '/public/favicon.ico'));
@@ -30,6 +32,9 @@ app.all('*', function(req, res, next) {
     next();
 });
 
+
+//日志记录
+log.use(app);
 
 //路由配置
 route.init(app);
